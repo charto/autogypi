@@ -47,7 +47,7 @@ Include the generated auto.gypi from your binding.gyp file:
         ]
     }
 
-Modules should include their own autogypi.json if they require other modules. They should omit the output field, but list any .gypi files of their own that are required to compile the module. For example:
+Modules should include their own autogypi.json if they require or are intended to be used by other modules. They may omit the output field, but should list any .gypi files of their own that are required to compile or use the module. For example:
 
     {
         "dependencies": [

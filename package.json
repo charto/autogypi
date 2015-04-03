@@ -1,7 +1,7 @@
 {
   "name": "autogypi",
   "version": "0.0.1",
-  "description": "Generate a gypi file for including configuration from other modules.",
+  "description": "Autogypi handles dependencies for node-gyp projects.",
   "homepage": "https://github.com/charto/autogypi",
   "bugs": {
     "url": "https://github.com/charto/autogypi/issues"

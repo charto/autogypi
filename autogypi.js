@@ -34,18 +34,65 @@ function readConf(confPath) {
 	return(conf);
 }
 
+/** Module entry point returned by require.resolve might be in a subdirectory.
+  * Look for the module root directory containing the module's packages.json
+  * and hopefully autogypi.json file.
+  * @param {string} modulePath Path to some file or directory inside the module.
+  * @return {{modulePath: string, moduleConfPath: string}} Path to module root
+  *   and possible autogypi.json file. */
+function findModuleRoot(modulePath) {
+	var nextPath;
+	var moduleConfFound = false;
+	var moduleConfPath;
+	var depth = 0;
+
+	while(1) {
+		moduleConfPath = path.join(modulePath, 'autogypi.json');
+
+		if(fs.existsSync(moduleConfPath)) {
+			// Found autogypi configuration for the module, process it.
+			moduleConfFound = true;
+			break;
+		}
+
+		// Found a package.json file, attempt to process the module.
+		if(fs.existsSync(path.join(modulePath, 'package.json'))) break;
+
+		// This is not the root of the module so move one directory up.
+		nextPath = path.resolve(modulePath, '..');
+
+		// Bail out if we cannot go up any more, or already reached a
+		// node_modules directory which should be outside the module's
+		// directory tree, or we've been stuck going up a number of
+		// levels already.
+		if(
+			nextPath === modulePath
+		||	path.basename(nextPath).toLowerCase() === 'node_modules'
+		||	++depth > 20
+		) {
+			throw('Cannot find package.json in module ' + moduleName + ' referenced in ' + confPath);
+		}
+
+		modulePath = nextPath;
+	}
+
+	return({
+		modulePath: modulePath,
+		moduleConfPath: moduleConfFound ? moduleConfPath : null
+	});
+}
+
 /** @param {string} confPath Configuration file path to show in error messages.
   * @param {Array.<string>} dependList Names of required npm modules.
   * @param {*} resolver Like resolver function defined in this file, but possibly executing in the context of another module.
   * @param {{gypi: *}} result Object that forms the output .gypi file when written out as JSON. */ 
 function findDepends(confPath, dependList, resolver, result) {
 	var dependPathList;
-	var dependCount;
-	var moduleName, modulePath, nextPath, resolverPath;
-	var moduleConfFound;
+	var dependNum, dependCount;
+	var moduleName, modulePath, moduleConfPath, entryPath, resolverPath;
+	var moduleRootInfo;
 	var moduleConf;
 	var moduleResolver;
-	var depth;
 
 	// Get full paths to modules.
 	try {
@@ -58,48 +105,15 @@ function findDepends(confPath, dependList, resolver, result) {
 
 	for(dependNum = 0; dependNum < dependCount; dependNum++) {
 		moduleName = dependList[dependNum];
-		modulePath = path.dirname(path.relative('.', dependPathList[dependNum]));
+		entryPath = path.dirname(path.relative('.', dependPathList[dependNum]));
 
-		moduleConfFound = false;
-		depth = 0;
-
-		// Module entry point returned by require.resolve might be in
-		// a subdirectory. Look for the module root directory containing the
-		// module's packages.json and hopefully autogypi.json file.
-
-		while(1) {
-			moduleConfPath = path.join(modulePath, 'autogypi.json');
-
-			if(fs.existsSync(moduleConfPath)) {
-				// Found autogypi configuration for the module, process it.
-				moduleConfFound = true;
-				break;
-			}
-
-			// Found a package.json file, attempt to process the module.
-			if(fs.existsSync(path.join(modulePath, 'package.json'))) break;
-
-			// This is not the root of the module so move one directory up.
-			nextPath = path.resolve(modulePath, '..');
-
-			// Bail out if we cannot go up any more, or already reached a
-			// node_modules directory which should be outside the module's
-			// directory tree, or we've been stuck going up a number of
-			// levels already.
-			if(
-				nextPath === modulePath
-			||	path.basename(nextPath).toLowerCase() === 'node_modules'
-			||	++depth > 20
-			) {
-				throw('Cannot find package.json in module ' + moduleName + ' referenced in ' + confPath);
-			}
-
-			modulePath = nextPath;
-		}
+		moduleRootInfo = findModuleRoot(entryPath);
+		modulePath = moduleRootInfo.modulePath;
+		moduleConfPath = moduleRootInfo.moduleConfPath;
 
 		console.log('Found module ' + moduleName + ' in ' + modulePath);
 
-		if(moduleConfFound) {
+		if(moduleConfPath) {
 			// Luckily this module has an autogypi.json file specifying
 			// how it should be included. Check if it also has a script
 			// to resolve the full paths of its required npm modules.
@@ -117,7 +131,7 @@ function findDepends(confPath, dependList, resolver, result) {
 				moduleResolver = resolver;
 			}
 
-			// Parse the configuration file...
+			// Parse the configuration file.
 			parseConf(moduleConfPath, moduleConf, moduleResolver, result);
 		} else {
 			// No configuration file found, try to do something useful for
