@@ -1,0 +1,18 @@
+{
+  "name": "autogypi",
+  "version": "0.0.1",
+  "description": "Generate a gypi file for including configuration from other modules.",
+  "homepage": "https://github.com/charto/autogypi",
+  "bugs": {
+    "url": "https://github.com/charto/autogypi/issues"
+  },
+  "license": "MIT",
+  "author": "Juha Järvi",
+  "bin": {
+    "autogypi": "./autogypi"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/charto/autogypi.git"
+  }
+}
