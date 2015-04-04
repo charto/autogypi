@@ -101,6 +101,9 @@ function findDepends(confPath, dependList, resolver, result) {
 
 	for(dependNum = 0; dependNum < dependCount; dependNum++) {
 		moduleName = dependList[dependNum];
+		if(result.moduleTbl[moduleName]) continue;
+
+		result.moduleTbl[moduleName] = true;
 		entryPath = path.dirname(path.relative('.', dependPathList[dependNum]));
 
 		moduleRootInfo = findModuleRoot(entryPath);
@@ -164,6 +167,7 @@ function parseConf(confPath, conf, resolver, result) {
 
 // Initialize output file template.
 var result = {
+	moduleTbl: {},
 	gypi: {
 		includes: [],
 		include_dirs: [],
