@@ -47,7 +47,7 @@ Include the generated auto.gypi from your binding.gyp file:
         ]
     }
 
-Modules should include their own autogypi.json if they require or are intended to be used by other modules. They may omit the output field, but should list any .gypi files of their own that are required to compile or use the module. For example:
+Modules should include in their root directory a copy of gypiresolver.json from this package and their own autogypi.json if they require or are intended to be used by other modules. They may omit the output field, but should list any .gypi files of their own that are required to compile or use the module. For example:
 
     {
         "dependencies": [
@@ -57,6 +57,16 @@ Modules should include their own autogypi.json if they require or are intended t
             "nbind.gypi"
         ]
     }
+
+The contents of gypiresolver.js must be as follows or equivalent:
+
+    module.exports = function(moduleNameList) {
+        return(moduleNameList.map(function(moduleName) {
+            return(require.resolve(moduleName));
+        }));
+    };
+
+Its purpose is to look for modules from the context of others, so modules stored inside others are found.
 
 The nbind.gypi file would then contain any gyp settings required to successfully compile and include it in other modules:
 

@@ -7,11 +7,7 @@ var path = require('path');
 /** Get full paths of named modules.
   * @param {Array.<string>} moduleNameList Module names.
   * @return {Array.<string>} Full paths to modules. */
-function resolver(moduleNameList) {
-	return(moduleNameList.map(function(moduleName) {
-		return(require.resolve(moduleName));
-	}));
-}
+var resolver = require('./gypiresolver.js');
 
 /** Read configuration file in JSON format.
   * @param {string} confPath Path of file to read.
