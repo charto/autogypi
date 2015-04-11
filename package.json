@@ -1,6 +1,6 @@
 {
   "name": "autogypi",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "Autogypi handles dependencies for node-gyp projects.",
   "homepage": "https://github.com/charto/autogypi",
   "bugs": {

@@ -96,5 +96,5 @@ This is enough to successfully use the `nan` module. More heuristics may be adde
 License
 =======
 
-[The MIT License](https://raw.githubusercontent.com/jjrv/nbind/master/LICENSE)
+[The MIT License](https://raw.githubusercontent.com/charto/autogypi/master/LICENSE)
 Copyright (c) 2015 BusFaster Ltd
