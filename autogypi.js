@@ -7,7 +7,7 @@ var path = require('path');
 /** Get full paths of named modules.
   * @param {Array.<string>} moduleNameList Module names.
   * @return {Array.<string>} Full paths to modules. */
-var resolver = require('./gypiresolver.js');
+var resolver = require(path.resolve('.', 'gypiresolver.js'));
 
 /** Read configuration file in JSON format.
   * @param {string} confPath Path of file to read.
@@ -36,7 +36,7 @@ function readConf(confPath) {
   * @param {string} modulePath Path to some file or directory inside the module.
   * @return {{modulePath: string, moduleConfPath: string}} Path to module root
   *   and possible autogypi.json file. */
-function findModuleRoot(modulePath) {
+function findModuleRoot(modulePath, depend, confPath) {
 	var nextPath;
 	var moduleConfFound = false;
 	var moduleConfPath;
@@ -66,7 +66,7 @@ function findModuleRoot(modulePath) {
 		||	path.basename(nextPath).toLowerCase() === 'node_modules'
 		||	++depth > 20
 		) {
-			throw('Cannot find package.json in module ' + moduleName + ' referenced in ' + confPath);
+			throw('Cannot find package.json for dependency ' + depend + ' referenced in ' + confPath);
 		}
 
 		modulePath = nextPath;
@@ -83,34 +83,76 @@ function findModuleRoot(modulePath) {
   * @param {*} resolver Like resolver function defined in this file, but possibly executing in the context of another module.
   * @param {{gypi: *}} result Object that forms the output .gypi file when written out as JSON. */ 
 function findDepends(confPath, dependList, resolver, result) {
-	var dependPathList;
 	var dependNum, dependCount;
-	var moduleName, modulePath, moduleConfPath, entryPath, resolverPath;
+	var depend;
+	var modulePath, moduleConfPath, entryPath, resolverPath;
 	var moduleRootInfo;
 	var moduleConf;
 	var moduleResolver;
+	var moduleList, modulePathList, rawPathList;
+	var pathTbl;
+
+	function notPathy(name) {return(!name.match(/[/\\]/));}
+	function isPathy(name) {return(!notPathy(name));}
+
+	// Split dependencies according to whether they look like paths.
+	// Anything that's not a path is assumed to be a module name.
+	rawPathList = dependList.filter(isPathy);
+	moduleList = dependList.filter(notPathy);
 
 	// Get full paths to modules.
 	try {
-		dependPathList = resolver(dependList);
+		modulePathList = resolver(moduleList);
 	} catch(err) {
 		console.error(err);
 		throw('Unable to find a required module referenced in ' + confPath);
 	}
+
+	pathTbl = {};
+
+	// Associate module names with their full paths.
+	dependCount = moduleList.length;
+	for(dependNum = 0; dependNum < dependCount; dependNum++) {
+		pathTbl[moduleList[dependNum]] = modulePathList[dependNum];
+	}
+
+	// Associate possibly relative path references with full paths.
+	rawPathList.forEach(function(rawPath) {
+		pathTbl[rawPath] = path.resolve(path.dirname(confPath), rawPath);
+	});
+
 	dependCount = dependList.length;
 
 	for(dependNum = 0; dependNum < dependCount; dependNum++) {
-		moduleName = dependList[dependNum];
-		if(result.moduleTbl[moduleName]) continue;
+		depend = dependList[dependNum];
 
-		result.moduleTbl[moduleName] = true;
-		entryPath = path.dirname(path.relative('.', dependPathList[dependNum]));
+		// If the dependency is a module name, avoid including the same module
+		// twice even if it would be found in a different path from inside
+		// another module (multiple copies of a library in a C++ project is
+		// unlikely to work).
+		if(notPathy(depend)) {
+			if(result.foundModuleTbl[depend]) continue;
+			result.foundModuleTbl[depend] = true;
+		}
 
-		moduleRootInfo = findModuleRoot(entryPath);
+		// Get full path associated with dependency.
+		// If it's not a directory (so likely it's the module's main
+		// JavaScript file), start looking for the module's root from
+		// that file's directory.
+		entryPath = pathTbl[depend];
+		if(!fs.statSync(entryPath).isDirectory) entryPath = path.dirname(entryPath);
+
+		// Look for the module's root directory and possible autogypi.conf.
+		moduleRootInfo = findModuleRoot(entryPath, depend, confPath);
 		modulePath = moduleRootInfo.modulePath;
 		moduleConfPath = moduleRootInfo.moduleConfPath;
 
-		console.log('Found module ' + moduleName + ' in ' + modulePath);
+		// Ensure an identical module has not been included already based on
+		// the full path of its root directory.
+		if(result.foundPathTbl[modulePath]) continue;
+		result.foundPathTbl[modulePath] = true;
+
+		console.log('Found dependency ' + depend + ' in ' + modulePath);
 
 		if(moduleConfPath) {
 			// Luckily this module has an autogypi.json file specifying
@@ -120,7 +162,6 @@ function findDepends(confPath, dependList, resolver, result) {
 			moduleConf = readConf(moduleConfPath);
 
 			if(fs.existsSync(resolverPath)) {
-				// resolverPath = path.join('..', path.relative(__dirname, resolverPath)).substr(1);
 				resolverPath = path.resolve(__dirname, resolverPath);
 				moduleResolver = require(resolverPath);
 			} else {
@@ -167,7 +208,8 @@ function parseConf(confPath, conf, resolver, result) {
 
 // Initialize output file template.
 var result = {
-	moduleTbl: {},
+	foundModuleTbl: {},
+	foundPathTbl: {},
 	gypi: {
 		includes: [],
 		include_dirs: [],
