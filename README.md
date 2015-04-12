@@ -1,6 +1,8 @@
 autogypi
 ========
 
+[![npm version](https://img.shields.io/npm/v/autogypi.svg)](https://www.npmjs.com/package/autogypi)
+
 Autogypi handles dependencies for node-gyp projects. It generates a .gypi file you can include from the main `binding.gyp` file of your own module.
 The generated .gypi file includes references to other .gypi files bundled with any required npm modules.
 Modules requiring more modules are handled recursively.
