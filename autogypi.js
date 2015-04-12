@@ -4,11 +4,6 @@
 var fs = require('fs');
 var path = require('path');
 
-/** Get full paths of named modules.
-  * @param {Array.<string>} moduleNameList Module names.
-  * @return {Array.<string>} Full paths to modules. */
-var resolver = require(path.resolve('.', 'gypiresolver.js'));
-
 /** Read configuration file in JSON format.
   * @param {string} confPath Path of file to read.
   * @return {Object.<string, *>} File contents. */
@@ -88,7 +83,6 @@ function findDepends(confPath, dependList, resolver, result) {
 	var modulePath, moduleConfPath, entryPath, resolverPath;
 	var moduleRootInfo;
 	var moduleConf;
-	var moduleResolver;
 	var moduleList, modulePathList, rawPathList;
 	var pathTbl;
 
@@ -156,23 +150,11 @@ function findDepends(confPath, dependList, resolver, result) {
 
 		if(moduleConfPath) {
 			// Luckily this module has an autogypi.json file specifying
-			// how it should be included. Check if it also has a script
-			// to resolve the full paths of its required npm modules.
-			resolverPath = path.resolve(modulePath, 'gypiresolver.js');
+			// how it should be included.
 			moduleConf = readConf(moduleConfPath);
 
-			if(fs.existsSync(resolverPath)) {
-				resolverPath = path.resolve(__dirname, resolverPath);
-				moduleResolver = require(resolverPath);
-			} else {
-				// Try to resolve any required npm modules from the
-				// context of this module, instead of from the module
-				// actually requiring them. This may fail...
-				moduleResolver = resolver;
-			}
-
 			// Parse the configuration file.
-			parseConf(moduleConfPath, moduleConf, moduleResolver, result);
+			parseConf(moduleConfPath, moduleConf, resolver, result);
 		} else {
 			// No configuration file found, try to do something useful for
 			// hopefully getting the module compiled.
@@ -186,9 +168,32 @@ function findDepends(confPath, dependList, resolver, result) {
   * @param {Object.<string, *>} conf Configuration file contents as an object.
   * @param {*} resolver Like resolver function defined in this file, but possibly executing in the context of another module.
   * @param {{gypi: *}} result Object that forms the output .gypi file when written out as JSON. */ 
-function parseConf(confPath, conf, resolver, result) {
+function parseConf(confPath, conf, resolverPrev, result) {
 	var dependList = conf['dependencies'];
 	var includeList = conf['includes'];
+	var resolverPath = conf['resolver'];
+	/** Get full paths of named modules.
+	  * @param {Array.<string>} moduleNameList Module names.
+	  * @return {Array.<string>} Full paths to modules. */
+	var resolver;
+
+	if(!resolverPath) resolverPath = 'gypiresolver.js';
+	resolverPath = path.resolve(path.dirname(confPath), resolverPath);
+
+	try {
+		resolver = require(resolverPath);
+	} catch(e) {
+		console.log(err);
+		console.log('Problem reading module path resolver ' + resolverPath);
+
+		if(resolverPrev) {
+			console.log('Trying resolver from requiring package instead.');
+			resolver = resolverPrev;
+		} else {
+			console.log('Trying resolver from autogypi package instead.');
+			resolver = require(path.resolve(__dirname, 'gypiresolver.js'));
+		}
+	}
 
 	// Read the names of required npm modules and try to find their paths
 	// and possible autogypi.json files.
@@ -228,7 +233,7 @@ if(!result.outputPath) {
 	throw('"output" property with output file path is missing from configuration file ' + confPath);
 }
 
-parseConf(confPath, conf, resolver, result);
+parseConf(path.resolve('.', confPath), conf, null, result);
 
 // Serialize generated .gypi contents as JSON to output file.
 fs.writeFileSync(result.outputPath, JSON.stringify(result.gypi) + '\n');
