@@ -134,7 +134,7 @@ function findDepends(confPath, dependList, resolver, result) {
 		// JavaScript file), start looking for the module's root from
 		// that file's directory.
 		entryPath = pathTbl[depend];
-		if(!fs.statSync(entryPath).isDirectory) entryPath = path.dirname(entryPath);
+		if(!fs.statSync(entryPath).isDirectory()) entryPath = path.dirname(entryPath);
 
 		// Look for the module's root directory and possible autogypi.conf.
 		moduleRootInfo = findModuleRoot(entryPath, depend, confPath);
@@ -150,11 +150,8 @@ function findDepends(confPath, dependList, resolver, result) {
 
 		if(moduleConfPath) {
 			// Luckily this module has an autogypi.json file specifying
-			// how it should be included.
-			moduleConf = readConf(moduleConfPath);
-
-			// Parse the configuration file.
-			parseConf(moduleConfPath, moduleConf, resolver, result);
+			// how it should be included. Parse the configuration file.
+			parseConf(moduleConfPath, resolver, result);
 		} else {
 			// No configuration file found, try to do something useful for
 			// hopefully getting the module compiled.
@@ -168,7 +165,8 @@ function findDepends(confPath, dependList, resolver, result) {
   * @param {Object.<string, *>} conf Configuration file contents as an object.
   * @param {*} resolver Like resolver function defined in this file, but possibly executing in the context of another module.
   * @param {{gypi: *}} result Object that forms the output .gypi file when written out as JSON. */ 
-function parseConf(confPath, conf, resolverPrev, result) {
+function parseConf(confPath, resolverPrev, result) {
+	var conf = readConf(confPath);
 	var dependList = conf['dependencies'];
 	var includeList = conf['includes'];
 	var resolverPath = conf['resolver'];
@@ -209,6 +207,8 @@ function parseConf(confPath, conf, resolverPrev, result) {
 			})
 		);
 	}
+
+	return(conf);
 }
 
 // Initialize output file template.
@@ -226,14 +226,15 @@ var result = {
 var confPath = process.argv[2];
 if(!confPath) confPath = 'autogypi.json';
 
-var conf = readConf(confPath);
+confPath = path.resolve('.', confPath);
+if(fs.statSync(confPath).isDirectory()) confPath = path.join(confPath, 'autogypi.json');
 
-result.outputPath = conf['output'];
+var conf = parseConf(confPath, null, result);
+
+result.outputPath = path.resolve(path.dirname(confPath), conf['output']);
 if(!result.outputPath) {
 	throw('"output" property with output file path is missing from configuration file ' + confPath);
 }
-
-parseConf(path.resolve('.', confPath), conf, null, result);
 
 // Serialize generated .gypi contents as JSON to output file.
 fs.writeFileSync(result.outputPath, JSON.stringify(result.gypi) + '\n');
