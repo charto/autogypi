@@ -86,11 +86,21 @@ function findDepends(confPath, dependList, resolver, result) {
 	var moduleList, modulePathList, rawPathList;
 	var pathTbl;
 
-	function notPathy(name) {return(!name.match(/[/\\]/));}
+	function notPathy(name) {
+		return(
+			// Scoped module names start with an @.
+			name.match(/^@/) ||
+			// Names containing no slashes are probably module names.
+			!name.match(/[/\\]/)
+			// Names containing a single slash might be references to packages
+			// published on Github but autogypi doesn't support that, so such
+			// a condition is omitted here.
+		);
+	}
 	function isPathy(name) {return(!notPathy(name));}
 
-	// Split dependencies according to whether they look like paths.
-	// Anything that's not a path is assumed to be a module name.
+	// Divide dependencies into two groups according to whether they look like paths.
+	// Anything that's not a path is assumed to be a resolvable module name.
 	rawPathList = dependList.filter(isPathy);
 	moduleList = dependList.filter(notPathy);
 
@@ -154,7 +164,7 @@ function findDepends(confPath, dependList, resolver, result) {
 			parseConf(moduleConfPath, resolver, result);
 		} else {
 			// No configuration file found, try to do something useful for
-			// hopefully getting the module compiled.
+			// hopefully getting the module included. This is enough for nan.
 			result.gypi['include_dirs'].push(modulePath);
 		}
 	}
@@ -231,10 +241,11 @@ if(fs.statSync(confPath).isDirectory()) confPath = path.join(confPath, 'autogypi
 
 var conf = parseConf(confPath, null, result);
 
-result.outputPath = path.resolve(path.dirname(confPath), conf['output']);
-if(!result.outputPath) {
+if(!conf['output']) {
 	throw('"output" property with output file path is missing from configuration file ' + confPath);
 }
+
+result.outputPath = path.resolve(path.dirname(confPath), conf['output']);
 
 // Serialize generated .gypi contents as JSON to output file.
 fs.writeFileSync(result.outputPath, JSON.stringify(result.gypi) + '\n');
