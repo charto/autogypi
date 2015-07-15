@@ -3,8 +3,8 @@ autogypi
 
 [![npm version](https://img.shields.io/npm/v/autogypi.svg)](https://www.npmjs.com/package/autogypi)
 
-Autogypi handles dependencies for node-gyp projects. It generates a .gypi file you can include from the main `binding.gyp` file of your own module.
-The generated .gypi file includes references to other .gypi files bundled with any required npm modules.
+Autogypi generates a `.gypi` file you can include from the main `binding.gyp` file of your own module.
+The generated file includes references to other `.gypi` files bundled with any required npm modules.
 Modules requiring more modules are handled recursively.
 
 Why?
@@ -17,6 +17,8 @@ which may have been installed globally or in a node_modules directory higher up 
 
 Usage
 -----
+
+For a real-world example that uses autogypi, check out [nbind](https://www.npmjs.com/package/nbind).
 
 Call autogypi from the install script in your package.json file, for example:
 
@@ -42,7 +44,7 @@ The contents are as follows:
 Required npm modules are listed in dependencies. These could perhaps later be parsed automatically from the package.json file, but
 currently listing them in the configuration file allows listing only the modules containing C++ code relevant to your node-gyp project.
 
-Modules should include a copy of `gypiresolver.json` from this package. If the path to it is omitted from `autogypi.js`, it's assumed
+Modules should include a copy of `gypiresolver.js` from this package. If the path to it is omitted from `autogypi.js`, it's assumed
 to be found in the module's root directory.
 
 Include the generated `auto.gypi` from your `binding.gyp` file:
@@ -69,7 +71,8 @@ They may omit the output field, but should list any .gypi files of their own tha
     ],
     "includes": [
         "nbind.gypi"
-    ]
+    ],
+    "resolver": "gypiresolver.js"
 }
 ```
 
@@ -80,8 +83,7 @@ The `nbind.gypi` file would then contain any gyp settings required to successful
     "include_dirs": [
         "."
     ],
-    "sources": ["Binding.cc"],
-    ...
+    "sources": ["Binding.cc"]
 }
 ```
 
