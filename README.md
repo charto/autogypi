@@ -36,7 +36,7 @@ The contents are as follows:
     "dependencies": [
         "nbind"
     ],
-    "resolver": "gypiresolver.js",
+    "resolver": "autoresolver.js",
     "output": "auto.gypi"
 }
 ```
@@ -44,7 +44,7 @@ The contents are as follows:
 Required npm modules are listed in dependencies. These could perhaps later be parsed automatically from the package.json file, but
 currently listing them in the configuration file allows listing only the modules containing C++ code relevant to your node-gyp project.
 
-Modules should include a copy of `gypiresolver.js` from this package. If the path to it is omitted from `autogypi.js`, it's assumed
+Modules should include a copy of `autoresolver.js` from this package. If the path to it is omitted from `autogypi.js`, it's assumed
 to be found in the module's root directory.
 
 Include the generated `auto.gypi` from your `binding.gyp` file:
@@ -72,7 +72,7 @@ They may omit the output field, but should list any .gypi files of their own tha
     "includes": [
         "nbind.gypi"
     ],
-    "resolver": "gypiresolver.js"
+    "resolver": "autoresolver.js"
 }
 ```
 
@@ -87,7 +87,7 @@ The `nbind.gypi` file would then contain any gyp settings required to successful
 }
 ```
 
-The contents of `gypiresolver.js` distributed with the module must be as follows or equivalent:
+The contents of `autoresolver.js` distributed with the module must be as follows or equivalent:
 
 ```js
 module.exports = function(moduleNameList) {

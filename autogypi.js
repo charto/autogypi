@@ -185,7 +185,7 @@ function parseConf(confPath, resolverPrev, result) {
 	  * @return {Array.<string>} Full paths to modules. */
 	var resolver;
 
-	if(!resolverPath) resolverPath = 'gypiresolver.js';
+	if(!resolverPath) resolverPath = 'autoresolver.js';
 	resolverPath = path.resolve(path.dirname(confPath), resolverPath);
 
 	try {
@@ -199,7 +199,7 @@ function parseConf(confPath, resolverPrev, result) {
 			resolver = resolverPrev;
 		} else {
 			console.log('Trying resolver from autogypi package instead.');
-			resolver = require(path.resolve(__dirname, 'gypiresolver.js'));
+			resolver = require(path.resolve(__dirname, 'autoresolver.js'));
 		}
 	}
 
