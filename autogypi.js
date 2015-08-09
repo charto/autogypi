@@ -169,5 +169,10 @@ if(!conf['output']) {
 
 result.outputPath = path.resolve(path.dirname(confPath), conf['output']);
 
+var header = [
+	'# Automatically generated file. Edits will be lost.',
+	'# Based on: ' + path.relative(path.dirname(result.outputPath), confPath)
+].join('\n');
+
 // Serialize generated .gypi contents as JSON to output file.
-fs.writeFileSync(result.outputPath, JSON.stringify(result.gypi) + '\n');
+fs.writeFileSync(result.outputPath, header + '\n' + JSON.stringify(result.gypi) + '\n');
