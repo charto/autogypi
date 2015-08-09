@@ -87,15 +87,14 @@ function findDepends(confPath, dependList, resolver, result) {
 		} else {
 			// No configuration file found, try to do something useful for
 			// hopefully getting the module included. This is enough for nan.
-			result.gypi['include_dirs'].push(modulePath);
+			result.gypi['include_dirs'].push(path.relative(result.outputDir, modulePath));
 		}
 	}
 }
 
 /** Parse an autogypi.json configuration file.
   * @param {string} confPath Path to configuration file to parse.
-  * @param {Object.<string, *>} conf Configuration file contents as an object.
-  * @param {*} resolver Like resolver function defined in this file, but possibly executing in the context of another module.
+  * @param {*} resolverPrev Like resolver function defined in this file, but possibly executing in the context of another module.
   * @param {{gypi: *}} result Object that forms the output .gypi file when written out as JSON. */ 
 function parseConf(confPath, resolverPrev, result) {
 	var conf = link.readConf(confPath);
@@ -106,6 +105,15 @@ function parseConf(confPath, resolverPrev, result) {
 	  * @param {Array.<string>} moduleNameList Module names.
 	  * @return {Array.<string>} Full paths to modules. */
 	var resolver;
+
+	if(!result.outputPath) {
+		if(!conf['output']) {
+			throw('"output" property with output file path is missing from configuration file ' + confPath);
+		}
+
+		result.outputPath = path.resolve(path.dirname(confPath), conf['output']);
+		result.outputDir = path.dirname(result.outputPath);
+	}
 
 	if(!resolverPath) resolverPath = 'autoresolver.js';
 	resolverPath = path.resolve(path.dirname(confPath), resolverPath);
@@ -135,7 +143,7 @@ function parseConf(confPath, resolverPrev, result) {
 		Array.prototype.push.apply(
 			result.gypi['includes'],
 			includeList.map(function(includePath) {
-				return(path.relative('.', path.join(path.dirname(confPath), includePath)));
+				return(path.relative(result.outputDir, path.join(path.dirname(confPath), includePath)));
 			})
 		);
 	}
@@ -162,12 +170,6 @@ confPath = path.resolve('.', confPath);
 if(fs.statSync(confPath).isDirectory()) confPath = path.join(confPath, 'autogypi.json');
 
 var conf = parseConf(confPath, null, result);
-
-if(!conf['output']) {
-	throw('"output" property with output file path is missing from configuration file ' + confPath);
-}
-
-result.outputPath = path.resolve(path.dirname(confPath), conf['output']);
 
 var header = [
 	'# Automatically generated file. Edits will be lost.',
