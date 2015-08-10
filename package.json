@@ -1,6 +1,6 @@
 {
   "name": "autogypi",
-  "version": "0.0.5",
+  "version": "0.1.0",
   "description": "Autogypi handles dependencies for node-gyp projects.",
   "homepage": "https://github.com/charto/autogypi",
   "bugs": {
@@ -16,6 +16,6 @@
     "url": "https://github.com/charto/autogypi.git"
   },
   "dependencies": {
-    "@lib/autolink": "0.0.1"
+    "@lib/autolink": "0.0.2"
   }
 }

@@ -36,16 +36,12 @@ The contents are as follows:
     "dependencies": [
         "nbind"
     ],
-    "resolver": "autoresolver.js",
     "output": "auto.gypi"
 }
 ```
 
 Required npm modules are listed in dependencies. These could perhaps later be parsed automatically from the package.json file, but
 currently listing them in the configuration file allows listing only the modules containing C++ code relevant to your node-gyp project.
-
-Modules should include a copy of `autoresolver.js` from this package. If the path to it is omitted from `autogypi.js`, it's assumed
-to be found in the module's root directory.
 
 Include the generated `auto.gypi` from your `binding.gyp` file:
 
@@ -71,8 +67,7 @@ They may omit the output field, but should list any .gypi files of their own tha
     ],
     "includes": [
         "nbind.gypi"
-    ],
-    "resolver": "autoresolver.js"
+    ]
 }
 ```
 
@@ -86,19 +81,6 @@ The `nbind.gypi` file would then contain any gyp settings required to successful
     "sources": ["Binding.cc"]
 }
 ```
-
-The contents of `autoresolver.js` distributed with the module must be as follows or equivalent:
-
-```js
-module.exports = function(moduleNameList) {
-    return(moduleNameList.map(function(moduleName) {
-        return(require.resolve(moduleName));
-    }));
-};
-```
-
-Its purpose is to look for modules from the context of other modules, so they can be found inside
-nested `node_modules` directories or other special locations.
 
 Modules without any `autogypi.json` file get their root directory added to `include_dirs`.
 This is enough to successfully use the `nan` module. More heuristics may be added later if needed.
