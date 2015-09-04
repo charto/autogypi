@@ -20,6 +20,8 @@ Usage
 
 For a real-world example that uses autogypi, check out [nbind](https://www.npmjs.com/package/nbind).
 
+Note that you need a recent `npm` (at least 2.7.0 should work, 2.14.0 is safer). Update it with the command `npm install -g npm`
+
 Call autogypi from the install script in your package.json file, for example:
 
 ```json
