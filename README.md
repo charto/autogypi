@@ -1,6 +1,8 @@
 autogypi
 ========
 
+[![build status](https://travis-ci.org/charto/autogypi.svg?branch=master)](http://travis-ci.org/charto/autogypi)
+[![dependency status](https://david-dm.org/charto/autogypi.svg)](https://david-dm.org/charto/autogypi)
 [![npm version](https://img.shields.io/npm/v/autogypi.svg)](https://www.npmjs.com/package/autogypi)
 
 Autogypi generates a `.gypi` file you can include from the main `binding.gyp` file of your own module.
