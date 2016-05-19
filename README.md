@@ -133,7 +133,7 @@ Docs generated using [`docts`](https://github.com/charto/docts)
 > <a name="api-AutogypiConfig"></a>
 > ### Interface [`AutogypiConfig`](#api-AutogypiConfig)
 > <em>Format of autogypi.json files published in Node.js modules.</em>  
-> Source code: [`<>`](http://github.com/charto/autogypi/blob/cd73a7b/src/autogypi.ts#L36-L47)  
+> Source code: [`<>`](http://github.com/charto/autogypi/blob/e0645a6/src/autogypi.ts#L36-L47)  
 >  
 > Properties:  
 > > **.dependencies**<sub>?</sub> <sup><code>string[]</code></sup>  
@@ -150,7 +150,7 @@ Docs generated using [`docts`](https://github.com/charto/docts)
 > <a name="api-BindingConfig"></a>
 > ### Interface [`BindingConfig`](#api-BindingConfig)
 > <em>Options for generating an initial binding.gyp file.</em>  
-> Source code: [`<>`](http://github.com/charto/autogypi/blob/cd73a7b/src/autogypi.ts#L12-L21)  
+> Source code: [`<>`](http://github.com/charto/autogypi/blob/e0645a6/src/autogypi.ts#L12-L21)  
 >  
 > Properties:  
 > > **.basePath** <sup><code>string</code></sup>  
@@ -165,7 +165,7 @@ Docs generated using [`docts`](https://github.com/charto/docts)
 > <a name="api-GenerateOptions"></a>
 > ### Interface [`GenerateOptions`](#api-GenerateOptions)
 > <em>General options for generating gypi files.</em>  
-> Source code: [`<>`](http://github.com/charto/autogypi/blob/cd73a7b/src/autogypi.ts#L25-L32)  
+> Source code: [`<>`](http://github.com/charto/autogypi/blob/e0645a6/src/autogypi.ts#L25-L32)  
 >  
 > Properties:  
 > > **.configPath** <sup><code>string</code></sup>  
@@ -178,23 +178,23 @@ Docs generated using [`docts`](https://github.com/charto/docts)
 > <a name="api-generate"></a>
 > ### Function [`generate`](#api-generate)
 > <em>Write auto.gypi and auto-top.gypi files according to config.</em>  
-> Source code: [`<>`](http://github.com/charto/autogypi/blob/cd73a7b/src/autogypi.ts#L175-L196)  
-> > **generate( )** <sup>&rArr; <code>Bluebird&lt;void&gt;</code></sup> [`<>`](http://github.com/charto/autogypi/blob/cd73a7b/src/autogypi.ts#L175-L196)  
+> Source code: [`<>`](http://github.com/charto/autogypi/blob/e0645a6/src/autogypi.ts#L178-L199)  
+> > **generate( )** <sup>&rArr; <code>Bluebird&lt;void&gt;</code></sup> [`<>`](http://github.com/charto/autogypi/blob/e0645a6/src/autogypi.ts#L178-L199)  
 > > &emsp;&#x25aa; opts <sup><code>[GenerateOptions](#api-GenerateOptions)</code></sup>  
 > > &emsp;&#x25aa; config <sup><code>[AutogypiConfig](#api-AutogypiConfig)</code></sup> <em>Contents of autogypi.json.</em>  
 >
 > <a name="api-initGyp"></a>
 > ### Function [`initGyp`](#api-initGyp)
 > <em>Return an object with contents for an initial binding.gyp file.</em>  
-> Source code: [`<>`](http://github.com/charto/autogypi/blob/cd73a7b/src/autogypi.ts#L200-L221)  
-> > **initGyp( )** <sup>&rArr; <code>any</code></sup> [`<>`](http://github.com/charto/autogypi/blob/cd73a7b/src/autogypi.ts#L200-L221)  
+> Source code: [`<>`](http://github.com/charto/autogypi/blob/e0645a6/src/autogypi.ts#L203-L224)  
+> > **initGyp( )** <sup>&rArr; <code>any</code></sup> [`<>`](http://github.com/charto/autogypi/blob/e0645a6/src/autogypi.ts#L203-L224)  
 > > &emsp;&#x25aa; opts <sup><code>[BindingConfig](#api-BindingConfig)</code></sup>  
 >
 > <a name="api-writeJson"></a>
 > ### Function [`writeJson`](#api-writeJson)
 > <em>Save pretty-printed JSON object to a file or print an appropriate error.</em>  
-> Source code: [`<>`](http://github.com/charto/autogypi/blob/cd73a7b/src/autogypi.ts#L62-L78)  
-> > **writeJson( )** <sup>&rArr; <code>Bluebird&lt;{}&gt;</code></sup> [`<>`](http://github.com/charto/autogypi/blob/cd73a7b/src/autogypi.ts#L62-L78)  
+> Source code: [`<>`](http://github.com/charto/autogypi/blob/e0645a6/src/autogypi.ts#L62-L78)  
+> > **writeJson( )** <sup>&rArr; <code>Bluebird&lt;{}&gt;</code></sup> [`<>`](http://github.com/charto/autogypi/blob/e0645a6/src/autogypi.ts#L62-L78)  
 > > &emsp;&#x25aa; outputPath <sup><code>string</code></sup>  
 > > &emsp;&#x25aa; json <sup><code>any</code></sup>  
 > > &emsp;&#x25ab; name<sub>?</sub> <sup><code>string</code></sup>  
