@@ -182,12 +182,14 @@ export function generate(opts: GenerateOptions, config: AutogypiConfig) {
 			'', ''
 		].join('\n');
 
+		// Serialize generated .gypi contents with relative paths to output JSON files.
 		relativize(path.dirname(opts.outputPath), result.gypi);
-		relativize(path.dirname(opts.outputTopPath), result.gypiTop);
-
-		// Serialize generated .gypi contents as JSON to output files.
 		writeJson(opts.outputPath, result.gypi, 'gypi', header);
-		writeJson(opts.outputTopPath, result.gypiTop, 'gypi', header);
+
+		if(opts.outputTopPath) {
+			relativize(path.dirname(opts.outputTopPath), result.gypiTop);
+			writeJson(opts.outputTopPath, result.gypiTop, 'gypi', header);
+		}
 	});
 
 	return(generateDone);
@@ -198,11 +200,7 @@ export function generate(opts: GenerateOptions, config: AutogypiConfig) {
 export function initGyp(opts: BindingConfig) {
 	var basePath = opts.basePath;
 
-	var gyp = {
-		includes: [
-			path.relative(basePath, opts.outputTopPath)
-		],
-
+	var gyp: any = {
 		targets: [
 			{
 				includes: [
@@ -212,6 +210,12 @@ export function initGyp(opts: BindingConfig) {
 			}
 		]
 	};
+
+	if(opts.outputTopPath) {
+		gyp.includes = [
+			path.relative(basePath, opts.outputTopPath)
+		];
+	}
 
 	return(gyp);
 }
