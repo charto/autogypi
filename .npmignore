@@ -1,8 +1,6 @@
 node_modules/
-*.js
-*.d.ts
+src/
+.travis.yml
 *.log.*
 *.log
 *.tgz
-
-!src/*.d.ts

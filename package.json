@@ -1,21 +1,37 @@
 {
   "name": "autogypi",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Autogypi handles dependencies for node-gyp projects.",
-  "homepage": "https://github.com/charto/autogypi",
-  "bugs": {
-    "url": "https://github.com/charto/autogypi/issues"
-  },
-  "license": "MIT",
-  "author": "Juha Järvi",
+  "main": "dist/autogypi.js",
+  "typings": "dist/autogypi.d.ts",
   "bin": {
     "autogypi": "./autogypi"
   },
+  "scripts": {
+    "tsc": "tsc",
+    "docts": "docts",
+    "typings": "typings",
+    "prepublish": "typings install && tsc",
+    "test": "node autogypi --help"
+  },
+  "author": "Juha Järvi",
+  "license": "MIT",
   "repository": {
     "type": "git",
     "url": "https://github.com/charto/autogypi.git"
   },
+  "bugs": {
+    "url": "https://github.com/charto/autogypi/issues"
+  },
+  "homepage": "https://github.com/charto/autogypi",
   "dependencies": {
-    "@lib/autolink": "0.0.2"
+    "bluebird": "^3.4.0",
+    "commander": "~2.9.0",
+    "resolve": "~1.1.7"
+  },
+  "devDependencies": {
+    "docts": "~0.1.0",
+    "typescript": "^1.8.10",
+    "typings": "~0.8.1"
   }
 }

@@ -91,4 +91,4 @@ License
 =======
 
 [The MIT License](https://raw.githubusercontent.com/charto/autogypi/master/LICENSE)
-Copyright (c) 2015 BusFaster Ltd
+Copyright (c) 2015-2016 BusFaster Ltd
