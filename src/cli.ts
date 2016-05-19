@@ -56,12 +56,21 @@ function handleGenerate(opts: { [key: string]: any }) {
 	}
 
 	var configPath = resolve(opts['config'], 'autogypi.json');
+	var gypPath: string;
+
+	if(opts['initGyp']) gypPath = resolve(opts['initGyp'], 'binding.gyp');
+
+	if(!opts['root']) {
+		var refPath = configPath || gypPath;
+		if(refPath) root = path.dirname(refPath);
+	}
+
 	var outputPath = resolve(opts['output'], 'auto.gypi');
 	var outputTopPath = resolve(opts['outputTop'], 'auto-top.gypi');
 	var config: AutogypiConfig;
 
 	try {
-		config = require('configPath');
+		config = require(configPath);
 	} catch(err) {
 		config = {};
 	}
