@@ -99,7 +99,10 @@ function parseConfig(configPath: string, config?: AutogypiConfig): Promise<GypiP
 					return(json);
 				}
 			}
-		);
+		).catch((err: any) => {
+			console.error('Error finding module ' + dep);
+			console.error(err);
+		});
 
 		var subParseDone = resolveDone.then((entry: string) =>
 		// Parse possible autogypi.json file specifying how to include the module.
