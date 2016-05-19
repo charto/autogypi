@@ -20,6 +20,43 @@ which may have been installed globally or in a node_modules directory higher up 
 Usage
 -----
 
+Add in the `scripts` section of your `package.json`:
+
+```json
+  "scripts": {
+    "autogypi": "autogypi"
+  }
+```
+
+Then run the commands:
+
+```bash
+npm install --save-dev autogypi
+```
+
+Run `npm run autogypi -- --help` to see the command line options:
+
+```
+  Usage: autogypi [options]
+
+  Generate node-gyp dependency files.
+
+  Options:
+
+    -h, --help                output usage information
+    -V, --version             output the version number
+    -r, --root <path>         root path for config files, default is shell working directory
+    -c, --config <path>       config file, default autogypi.json
+    -o, --output <path>       per-target gypi file to create, default auto.gypi
+    -t, --output-top <path>   top-level gypi file to create, default auto-top.gypi
+    -T, --no-output-top       omit top-level gypi file
+    -p, --package <path>      add dependency on another npm package
+    -I, --include-dir <path>  add include directory for header files
+    --save [flag]             save changes to config file
+    --init-gyp [path]         create gyp file (default binding.gyp, implies --save) with options:
+    -s, --source <path>         - add C or C++ source file
+```
+
 For a real-world example that uses autogypi, check out [nbind](https://www.npmjs.com/package/nbind).
 
 Call autogypi from the install script in your package.json file, for example:
