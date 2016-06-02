@@ -1,6 +1,6 @@
 {
   "name": "autogypi",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "description": "Autogypi handles dependencies for node-gyp projects.",
   "main": "dist/autogypi.js",
   "typings": "dist/autogypi.d.ts",
