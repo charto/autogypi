@@ -45,6 +45,20 @@ function push(item: string, list: string[]) {
 
 handleGenerate(cmd.opts());
 
+/** Return sorted unique values from multiple arrays. */
+
+function concatUnique(...args: string[][]) {
+	const tbl: { [key: string]: any } = {};
+
+	for(var list of args) {
+		for(var item of list || []) {
+			tbl[item] = true;
+		}
+	}
+
+	return(Object.keys(tbl).sort());
+}
+
 function handleGenerate(opts: { [key: string]: any }) {
 	var cwd = process.cwd();
 	var root = opts['root'] || cwd;
@@ -81,8 +95,8 @@ function handleGenerate(opts: { [key: string]: any }) {
 	if(typeof(opts['outputTop']) == 'string') config.outputTop = path.relative(path.dirname(configPath), outputTopPath);
 	else outputTopPath = path.resolve(path.dirname(configPath), config['outputTop'] || outputTopPath);
 
-	config['dependencies'] = (config.dependencies || []).concat(opts['package'] || []);
-	config['includes'] = (config.includes || []).concat(opts['includeDir'] || []);
+	config['dependencies'] = concatUnique(config.dependencies, opts['package']);
+	config['includes'] = concatUnique(config.includes, opts['includeDir']);
 
 	if(opts['save'] || opts['initGyp']) writeJson(configPath, config, 'config');
 
@@ -109,5 +123,8 @@ function handleGenerate(opts: { [key: string]: any }) {
 	generate(
 		generateOptions,
 		config
-	);
+	).catch((err: any) => {
+		console.error('Error: could not generate gypi files:');
+		console.error(err);
+	});
 }

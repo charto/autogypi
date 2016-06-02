@@ -72,14 +72,20 @@ export function writeJson(outputPath: string, json: any, name?: string, header?:
 		),
 		{ encoding: 'utf-8' }
 	).catch((err: NodeJS.ErrnoException) => {
-		console.error('Warning: could not save ' + (name || 'json') + ' to ' + outputPath);
-		console.error(err);
+		console.error('Error: could not save ' + (name || 'json') + ' to ' + outputPath);
+		throw(err);
 	}));
 }
 
 function parseConfig(configPath: string, config?: AutogypiConfig): Promise<GypiPair> {
 	var basePath = path.dirname(configPath);
-	if(!config) config = require(configPath);
+	if(!config) {
+		try {
+			config = require(configPath);
+		} catch(err) {
+			return(Promise.reject(err));
+		}
+	}
 
 	function resolveFile(relativePath: string) {
 		return(path.resolve(basePath, relativePath));
@@ -90,7 +96,7 @@ function parseConfig(configPath: string, config?: AutogypiConfig): Promise<GypiP
 	var dependenciesDone = Promise.map(config.dependencies || [], (dep: string) => {
 		// Find package.json file of required module.
 
-		var resolveDone = Promise.promisify(resolve)(
+		var subParseDone = Promise.promisify(resolve)(
 			dep,
 			{
 				basedir: basePath,
@@ -99,25 +105,29 @@ function parseConfig(configPath: string, config?: AutogypiConfig): Promise<GypiP
 					return(json);
 				}
 			}
-		).catch((err: any) => {
-			console.error('Error finding module ' + dep);
-			console.error(err);
+		).then(subParse).catch((err: any) => {
+			console.error('Error: could not find module ' + dep);
+			throw(err);
 		});
 
-		var subParseDone = resolveDone.then((entry: string) =>
-		// Parse possible autogypi.json file specifying how to include the module.
-			parseConfig(path.resolve(path.dirname(entry), 'autogypi.json'))
-		).catch((err: any) => {
-			// No configuration file found, just add the root directory to include paths.
-			// This is enough for nan.
-			var pair: GypiPair = {
-				gypi: {
-					'include_dirs': [ path.dirname(resolveDone.value() as string) ]
-				}
-			};
+		function subParse(entry: string) {
+			return(
+				// Parse possible autogypi.json file specifying how to include the module.
+				parseConfig(
+					path.resolve(path.dirname(entry), 'autogypi.json')
+				).catch((err: any) => {
+					// No configuration file found, just add the root directory to include paths.
+					// This is enough for nan.
+					var pair: GypiPair = {
+						gypi: {
+							'include_dirs': [ path.dirname(entry) ]
+						}
+					};
 
-			return(pair);
-		});
+					return(pair);
+				})
+			);
+		}
 
 		return(subParseDone);
 	});
@@ -187,12 +197,19 @@ export function generate(opts: GenerateOptions, config: AutogypiConfig) {
 
 		// Serialize generated .gypi contents with relative paths to output JSON files.
 		relativize(path.dirname(opts.outputPath), result.gypi);
-		writeJson(opts.outputPath, result.gypi, 'gypi', header);
+
+		var writeTasks = [
+			writeJson(opts.outputPath, result.gypi, 'gypi', header)
+		];
 
 		if(opts.outputTopPath) {
 			relativize(path.dirname(opts.outputTopPath), result.gypiTop);
-			writeJson(opts.outputTopPath, result.gypiTop, 'gypi', header);
+			writeTasks.push(
+				writeJson(opts.outputTopPath, result.gypiTop, 'gypi', header)
+			);
 		}
+
+		return(Promise.all(writeTasks));
 	});
 
 	return(generateDone);
