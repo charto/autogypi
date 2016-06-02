@@ -5,36 +5,175 @@ autogypi
 [![dependency status](https://david-dm.org/charto/autogypi.svg)](https://david-dm.org/charto/autogypi)
 [![npm version](https://img.shields.io/npm/v/autogypi.svg)](https://www.npmjs.com/package/autogypi)
 
-Autogypi generates a `.gypi` file you can include from the main `binding.gyp` file of your own module.
-The generated file includes references to other `.gypi` files bundled with any required npm modules.
-Modules requiring more modules are handled recursively.
+`autogypi` handles issues with C++ libraries published on npm.
+It generates required compiler and `node-gyp` options for you and works great
+with [`nbind`](https://github.com/charto/nbind#readme).
 
-Why?
-----
+`node-gyp` is very good at fixing relative paths between `.gypi` files
+in different locations, but it cannot automatically find other npm packages,
+which may have been installed globally or in a `node_modules` directory
+higher up in the directory tree or hidden inside another package.
+`autogypi` deals with them.
 
-To easily publish in npm and use any C++ libraries designed for use in Node.js plugins.
+Features
+========
 
-Gyp is very good at fixing relative paths between .gypi files in different locations, but it cannot automatically find other npm modules
-which may have been installed globally or in a node_modules directory higher up in the directory tree or hidden inside another module.
+- Initialize configuration for a `node-gyp` -based project.
+- Generate C++ compiler options.
+- Guess include directories to use headers from other packages.
+- Include additional `.gypi` files required by other packages.
 
 Usage
------
+=====
+
+Installation
+------------
 
 Add in the `scripts` section of your `package.json`:
 
 ```json
   "scripts": {
-    "autogypi": "autogypi"
+    "autogypi": "autogypi",
+    "node-gyp": "node-gyp",
+
+    "install": "autogypi && node-gyp configure build"
   }
 ```
 
 Then run the commands:
 
 ```bash
-npm install --save-dev autogypi
+npm install --save autogypi
 ```
 
-Run `npm run autogypi -- --help` to see the command line options:
+Configuring `node-gyp`
+----------------------
+
+You should add `auto-top.gypi` in the in the `includes` section
+at the top level of your `binding.gyp` file and `auto.gypi` in the `includes`
+section of each target inside.
+
+If you don't have a `binding.gyp` file yet, you can create one now with the
+required changes already made. For example:
+
+```bash
+npm run -- autogypi --init-gyp -p nbind -s example.cc
+```
+
+Replace `example.cc` with the name of your C++ source file.
+You can add multiple `-s` options, one for each source file.
+
+The `-p nbind` option means the C++ code uses a package called
+[`nbind`](https://github.com/charto/nbind#readme).
+Multiple `-p` options can be added to add any other packages
+compatible with `autogypi`.
+
+The above command creates two files with contents:
+
+**`binding.gyp`**
+
+```json
+{
+  "targets": [
+    {
+      "includes": [
+        "auto.gypi"
+      ],
+      "sources": [
+        "example.cc"
+      ]
+    }
+  ],
+  "includes": [
+    "auto-top.gypi"
+  ]
+}
+```
+
+**`autogypi.json`**
+
+```json
+{
+  "dependencies": [
+    "nbind"
+  ],
+  "includes": []
+}
+```
+
+It also prints an error if the packages you listed as dependencies are missing.
+For example you can install `nbind` and run `autogypi` again:
+
+```bash
+npm install --save nbind
+npm run autogypi
+```
+
+Compiling your project
+----------------------
+
+Call `autogypi` and `node-gyp` from the install script in your
+`package.json` file, for example like
+`autogypi && node-gyp configure build`
+or from the command line:
+`npm run autogypi && npm run node-gyp configure build`
+
+`autogypi` generates two `.gypi` files according to its configuration.
+For example with only `nbind` as a dependency they look like:
+
+**`auto-top.gypi`**
+
+```json
+{
+  "includes": [
+    "node_modules/nbind/src/nbind-common.gypi"
+  ]
+}
+```
+
+**`auto.gypi`**
+
+```json
+{
+  "include_dirs": [
+    "node_modules/nbind/node_modules/nan"
+  ],
+  "includes": [
+    "node_modules/nbind/src/nbind.gypi"
+  ]
+}
+```
+
+Publishing a C++ library on npm
+-------------------------------
+
+Packages should include an `autogypi.json` file in their root directory
+if they require or are intended to be used by other modules.
+They should list any .gypi files of their own that are required to compile
+or use the module. For example:
+
+```json
+{
+  "dependencies": [
+    "nan"
+  ],
+  "includes": [
+    "example.gypi"
+  ]
+}
+```
+
+The `example.gypi` file would then contain any gyp settings
+required to successfully compile and include it in other packages.
+
+Modules without any `autogypi.json` file get their root directory
+added to `include_dirs`. This is enough to successfully use the `nan` module.
+More heuristics may be added later if needed.
+
+Command line options
+====================
+
+Run `npm run -- autogypi --help` to see the command line options:
 
 ```
   Usage: autogypi [options]
@@ -57,74 +196,9 @@ Run `npm run autogypi -- --help` to see the command line options:
     -s, --source <path>         - add C or C++ source file
 ```
 
-For a real-world example that uses autogypi, check out [nbind](https://www.npmjs.com/package/nbind).
-
-Call autogypi from the install script in your package.json file, for example:
-
-```json
-"scripts": {
-    "install": "autogypi && node-gyp configure build"
-}
-```
-
-By default, autogypi reads a configuration file called `autogypi.json`. You can pass another name as a command line parameter.
-The contents are as follows:
-
-```json
-{
-    "dependencies": [
-        "nbind"
-    ],
-    "output": "auto.gypi"
-}
-```
-
-Required npm modules are listed in dependencies.
-These could perhaps later be parsed automatically from the package.json file,
-but currently listing them in the configuration file allows listing only the modules
-containing C++ code relevant to your node-gyp project.
-
-Include the generated `auto.gypi` from your `binding.gyp` file:
-
-```json
-{
-    "targets": [
-        {
-            "target_name": "example",
-            "includes": ["auto.gypi"],
-            "sources": ["Example.cc"]
-        }
-    ]
-}
-```
-
-Modules should include their own `autogypi.json` in their root directory if they require or are intended to be used by other modules.
-They may omit the output field, but should list any .gypi files of their own that are required to compile or use the module. For example:
-
-```json
-{
-    "dependencies": [
-        "nan"
-    ],
-    "includes": [
-        "nbind.gypi"
-    ]
-}
-```
-
-The `nbind.gypi` file would then contain any gyp settings required to successfully compile and include it in other modules, for example:
-
-```json
-{
-    "include_dirs": [
-        "."
-    ],
-    "sources": ["Binding.cc"]
-}
-```
-
-Modules without any `autogypi.json` file get their root directory added to `include_dirs`.
-This is enough to successfully use the `nan` module. More heuristics may be added later if needed.
+Renaming `autogypi.json`, `auto.gypi` and `auto-top.gypi` using the relevant
+command line parameters will affect generating the `.gypi` files and also
+the contents of any `binding.gyp` generated using the `--init-gyp` option.
 
 API
 ===
@@ -133,7 +207,7 @@ Docs generated using [`docts`](https://github.com/charto/docts)
 > <a name="api-AutogypiConfig"></a>
 > ### Interface [`AutogypiConfig`](#api-AutogypiConfig)
 > <em>Format of autogypi.json files published in Node.js modules.</em>  
-> Source code: [`<>`](http://github.com/charto/autogypi/blob/e0645a6/src/autogypi.ts#L36-L47)  
+> Source code: [`<>`](http://github.com/charto/autogypi/blob/cc6e9d1/src/autogypi.ts#L36-L47)  
 >  
 > Properties:  
 > > **.dependencies**<sub>?</sub> <sup><code>string[]</code></sup>  
@@ -150,7 +224,7 @@ Docs generated using [`docts`](https://github.com/charto/docts)
 > <a name="api-BindingConfig"></a>
 > ### Interface [`BindingConfig`](#api-BindingConfig)
 > <em>Options for generating an initial binding.gyp file.</em>  
-> Source code: [`<>`](http://github.com/charto/autogypi/blob/e0645a6/src/autogypi.ts#L12-L21)  
+> Source code: [`<>`](http://github.com/charto/autogypi/blob/cc6e9d1/src/autogypi.ts#L12-L21)  
 >  
 > Properties:  
 > > **.basePath** <sup><code>string</code></sup>  
@@ -165,7 +239,7 @@ Docs generated using [`docts`](https://github.com/charto/docts)
 > <a name="api-GenerateOptions"></a>
 > ### Interface [`GenerateOptions`](#api-GenerateOptions)
 > <em>General options for generating gypi files.</em>  
-> Source code: [`<>`](http://github.com/charto/autogypi/blob/e0645a6/src/autogypi.ts#L25-L32)  
+> Source code: [`<>`](http://github.com/charto/autogypi/blob/cc6e9d1/src/autogypi.ts#L25-L32)  
 >  
 > Properties:  
 > > **.configPath** <sup><code>string</code></sup>  
@@ -178,23 +252,23 @@ Docs generated using [`docts`](https://github.com/charto/docts)
 > <a name="api-generate"></a>
 > ### Function [`generate`](#api-generate)
 > <em>Write auto.gypi and auto-top.gypi files according to config.</em>  
-> Source code: [`<>`](http://github.com/charto/autogypi/blob/e0645a6/src/autogypi.ts#L178-L199)  
-> > **generate( )** <sup>&rArr; <code>Bluebird&lt;void&gt;</code></sup> [`<>`](http://github.com/charto/autogypi/blob/e0645a6/src/autogypi.ts#L178-L199)  
+> Source code: [`<>`](http://github.com/charto/autogypi/blob/cc6e9d1/src/autogypi.ts#L188-L216)  
+> > **generate( )** <sup>&rArr; <code>Bluebird&lt;{}[]&gt;</code></sup> [`<>`](http://github.com/charto/autogypi/blob/cc6e9d1/src/autogypi.ts#L188-L216)  
 > > &emsp;&#x25aa; opts <sup><code>[GenerateOptions](#api-GenerateOptions)</code></sup>  
 > > &emsp;&#x25aa; config <sup><code>[AutogypiConfig](#api-AutogypiConfig)</code></sup> <em>Contents of autogypi.json.</em>  
 >
 > <a name="api-initGyp"></a>
 > ### Function [`initGyp`](#api-initGyp)
 > <em>Return an object with contents for an initial binding.gyp file.</em>  
-> Source code: [`<>`](http://github.com/charto/autogypi/blob/e0645a6/src/autogypi.ts#L203-L224)  
-> > **initGyp( )** <sup>&rArr; <code>any</code></sup> [`<>`](http://github.com/charto/autogypi/blob/e0645a6/src/autogypi.ts#L203-L224)  
+> Source code: [`<>`](http://github.com/charto/autogypi/blob/cc6e9d1/src/autogypi.ts#L220-L241)  
+> > **initGyp( )** <sup>&rArr; <code>any</code></sup> [`<>`](http://github.com/charto/autogypi/blob/cc6e9d1/src/autogypi.ts#L220-L241)  
 > > &emsp;&#x25aa; opts <sup><code>[BindingConfig](#api-BindingConfig)</code></sup>  
 >
 > <a name="api-writeJson"></a>
 > ### Function [`writeJson`](#api-writeJson)
 > <em>Save pretty-printed JSON object to a file or print an appropriate error.</em>  
-> Source code: [`<>`](http://github.com/charto/autogypi/blob/e0645a6/src/autogypi.ts#L62-L78)  
-> > **writeJson( )** <sup>&rArr; <code>Bluebird&lt;{}&gt;</code></sup> [`<>`](http://github.com/charto/autogypi/blob/e0645a6/src/autogypi.ts#L62-L78)  
+> Source code: [`<>`](http://github.com/charto/autogypi/blob/cc6e9d1/src/autogypi.ts#L62-L84)  
+> > **writeJson( )** <sup>&rArr; <code>Bluebird&lt;{}&gt;</code></sup> [`<>`](http://github.com/charto/autogypi/blob/cc6e9d1/src/autogypi.ts#L62-L84)  
 > > &emsp;&#x25aa; outputPath <sup><code>string</code></sup>  
 > > &emsp;&#x25aa; json <sup><code>any</code></sup>  
 > > &emsp;&#x25ab; name<sub>?</sub> <sup><code>string</code></sup>  

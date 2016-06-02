@@ -25,7 +25,7 @@
   "bugs": {
     "url": "https://github.com/charto/autogypi/issues"
   },
-  "homepage": "https://github.com/charto/autogypi",
+  "homepage": "https://github.com/charto/autogypi#readme",
   "dependencies": {
     "bluebird": "^3.4.0",
     "commander": "~2.9.0",

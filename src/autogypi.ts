@@ -57,7 +57,7 @@ interface GypiPair {
 	gypiTop?: Gypi;
 }
 
-/** Save pretty-printed JSON object to a file or print an appropriate error. */
+/** Save pretty-printed JSON object to a file. */
 
 export function writeJson(outputPath: string, json: any, name?: string, header?: string) {
 	const writeFile = Promise.promisify(
