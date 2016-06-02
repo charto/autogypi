@@ -11,7 +11,7 @@
     "tsc": "tsc",
     "docts": "docts",
     "typings": "typings",
-    "prepublish": "typings install && tsc",
+    "prepublish": "tslint src/autogypi.ts src/cli.ts && typings install && tsc",
     "test": "node autogypi --help"
   },
   "author": "Juha Järvi",
@@ -31,6 +31,7 @@
   },
   "devDependencies": {
     "docts": "~0.1.0",
+    "tslint": "^3.10.2",
     "typescript": "^1.8.10",
     "typings": "~0.8.1"
   }

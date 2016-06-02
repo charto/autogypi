@@ -60,7 +60,16 @@ interface GypiPair {
 /** Save pretty-printed JSON object to a file or print an appropriate error. */
 
 export function writeJson(outputPath: string, json: any, name?: string, header?: string) {
-	return((Promise.promisify(fs.writeFile as (path: string, data: string, options: any, cb: (err: NodeJS.ErrnoException) => void) => void))(
+	const writeFile = Promise.promisify(
+		fs.writeFile as (
+			path: string,
+			data: string,
+			options: any,
+			cb: (err: NodeJS.ErrnoException) => void
+		) => void
+	);
+
+	return(writeFile(
 		outputPath,
 		(
 			(header || '') +
@@ -71,14 +80,12 @@ export function writeJson(outputPath: string, json: any, name?: string, header?:
 			'\n'
 		),
 		{ encoding: 'utf-8' }
-	).catch((err: NodeJS.ErrnoException) => {
-		console.error('Error: could not save ' + (name || 'json') + ' to ' + outputPath);
-		throw(err);
-	}));
+	));
 }
 
 function parseConfig(configPath: string, config?: AutogypiConfig): Promise<GypiPair> {
-	var basePath = path.dirname(configPath);
+	const basePath = path.dirname(configPath);
+
 	if(!config) {
 		try {
 			config = require(configPath);
@@ -93,10 +100,10 @@ function parseConfig(configPath: string, config?: AutogypiConfig): Promise<GypiP
 
 	// Get list of gypi options for required Node.js modules.
 
-	var dependenciesDone = Promise.map(config.dependencies || [], (dep: string) => {
+	const dependenciesDone = Promise.map(config.dependencies || [], (dep: string) =>
 		// Find package.json file of required module.
 
-		var subParseDone = Promise.promisify(resolve)(
+		Promise.promisify(resolve)(
 			dep,
 			{
 				basedir: basePath,
@@ -105,46 +112,39 @@ function parseConfig(configPath: string, config?: AutogypiConfig): Promise<GypiP
 					return(json);
 				}
 			}
-		).then(subParse).catch((err: any) => {
-			console.error('Error: could not find module ' + dep);
-			throw(err);
-		});
+		).then((entry: string) =>
+			// Parse possible autogypi.json file specifying how to include the module.
 
-		function subParse(entry: string) {
-			return(
-				// Parse possible autogypi.json file specifying how to include the module.
-				parseConfig(
-					path.resolve(path.dirname(entry), 'autogypi.json')
-				).catch((err: any) => {
-					// No configuration file found, just add the root directory to include paths.
-					// This is enough for nan.
-					var pair: GypiPair = {
-						gypi: {
-							'include_dirs': [ path.dirname(entry) ]
-						}
-					};
+			parseConfig(
+				path.resolve(path.dirname(entry), 'autogypi.json')
+			).catch((err: any) => {
+				// No configuration file found, just add the root directory to include paths.
+				// This is enough for nan.
 
-					return(pair);
-				})
-			);
-		}
+				const pair: GypiPair = {
+					gypi: {
+						'include_dirs': [ path.dirname(entry) ]
+					}
+				};
 
-		return(subParseDone);
-	});
+				return(pair);
+			})
+		)
+	);
 
-	var parseDone = dependenciesDone.then((gypiList: GypiPair[]) => {
-		var gypi: Gypi = {};
-		var gypiTop: Gypi = {};
+	const parseDone = dependenciesDone.then((gypiList: GypiPair[]) => {
+		const gypi: Gypi = {};
+		const gypiTop: Gypi = {};
 
 		// Flatten list of gypi options for required modules,
 		// concatenating all lists of files with matching keys.
 
-		for(var sub of gypiList) {
-			for(var key of Object.keys(sub.gypi || {})) {
+		for(let sub of gypiList) {
+			for(let key of Object.keys(sub.gypi || {})) {
 				gypi[key] = (gypi[key] || []).concat(sub.gypi[key]);
 			}
 
-			for(var key of Object.keys(sub.gypiTop || {})) {
+			for(let key of Object.keys(sub.gypiTop || {})) {
 				gypiTop[key] = (gypiTop[key] || []).concat(sub.gypiTop[key]);
 			}
 		}
@@ -159,10 +159,10 @@ function parseConfig(configPath: string, config?: AutogypiConfig): Promise<GypiP
 			gypiTop.includes = (gypiTop.includes || []).concat(config.topIncludes.map(resolveFile));
 		}
 
-		var pair: GypiPair = {
+		const pair: GypiPair = {
 			gypi: gypi,
 			gypiTop: gypiTop
-		}
+		};
 
 		return(pair);
 	});
@@ -174,10 +174,10 @@ function relativize(outputPath: string, gypi: Gypi) {
 	function relativizeList(pathList: string[]) {
 		return(pathList.map((absolutePath: string) =>
 			path.relative(outputPath, absolutePath)
-		))
+		));
 	}
 
-	for(var key of ['include_dirs', 'includes']) {
+	for(let key of ['include_dirs', 'includes']) {
 		if(gypi[key]) gypi[key] = relativizeList(gypi[key]);
 	}
 }
@@ -186,10 +186,10 @@ function relativize(outputPath: string, gypi: Gypi) {
   * @param config Contents of autogypi.json. */
 
 export function generate(opts: GenerateOptions, config: AutogypiConfig) {
-	var parseDone = parseConfig(opts.configPath, config);
+	const parseDone = parseConfig(opts.configPath, config);
 
-	var generateDone = parseDone.then((result: GypiPair) => {
-		var header = [
+	const generateDone = parseDone.then((result: GypiPair) => {
+		const header = [
 			'# Automatically generated file. Edits will be lost.',
 			'# Based on: ' + path.relative(path.dirname(opts.outputPath), opts.configPath),
 			'', ''
@@ -198,7 +198,7 @@ export function generate(opts: GenerateOptions, config: AutogypiConfig) {
 		// Serialize generated .gypi contents with relative paths to output JSON files.
 		relativize(path.dirname(opts.outputPath), result.gypi);
 
-		var writeTasks = [
+		const writeTasks = [
 			writeJson(opts.outputPath, result.gypi, 'gypi', header)
 		];
 
@@ -218,9 +218,9 @@ export function generate(opts: GenerateOptions, config: AutogypiConfig) {
 /** Return an object with contents for an initial binding.gyp file. */
 
 export function initGyp(opts: BindingConfig) {
-	var basePath = opts.basePath;
+	const basePath = opts.basePath;
 
-	var gyp: any = {
+	const gyp: any = {
 		targets: [
 			{
 				includes: [

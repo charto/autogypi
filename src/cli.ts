@@ -1,24 +1,23 @@
 // This file is part of autogypi, copyright (C) 2015-2016 BusFaster Ltd.
 // Released under the MIT license, see LICENSE.
 
-import * as fs from 'fs';
 import * as path from 'path';
-
 import * as cmd from 'commander';
 
 import {initGyp, generate, writeJson, AutogypiConfig, GenerateOptions} from './autogypi';
 
 type _ICommand = typeof cmd;
-interface ICommand extends _ICommand {
-	arguments(spec: string): ICommand;
+interface Command extends _ICommand {
+	arguments(spec: string): Command;
 }
 
 function parseBool(flag: string) {
-	var falseTbl: { [key: string]: boolean } = {
+	const falseTbl: { [key: string]: boolean } = {
 		'0': true,
 		'no': true,
 		'false': true
-	}
+	};
+
 	return(!flag || !falseTbl[flag.toLowerCase()]);
 }
 
@@ -27,7 +26,9 @@ function push(item: string, list: string[]) {
 	return(list);
 }
 
-((cmd.version(require('../package.json').version) as ICommand)
+/* tslint:disable:max-line-length */
+
+((cmd.version(require('../package.json').version) as Command)
 	.description('Generate node-gyp dependency files.')
 	.option('-r, --root <path>', 'root path for config files, default is shell working directory')
 	.option('-c, --config <path>', 'config file, default autogypi.json')
@@ -43,6 +44,8 @@ function push(item: string, list: string[]) {
 	.parse(process.argv)
 );
 
+/* tslint:enable:max-line-length */
+
 handleGenerate(cmd.opts());
 
 /** Return sorted unique values from multiple arrays. */
@@ -50,8 +53,8 @@ handleGenerate(cmd.opts());
 function concatUnique(...args: string[][]) {
 	const tbl: { [key: string]: any } = {};
 
-	for(var list of args) {
-		for(var item of list || []) {
+	for(let list of args) {
+		for(let item of list || []) {
 			tbl[item] = true;
 		}
 	}
@@ -60,28 +63,32 @@ function concatUnique(...args: string[][]) {
 }
 
 function handleGenerate(opts: { [key: string]: any }) {
-	var cwd = process.cwd();
-	var root = opts['root'] || cwd;
+	const cwd = process.cwd();
+	let root = opts['root'] || cwd;
 
 	function resolve(pathName: string, pathDefault: string) {
-		if(typeof(pathName) == 'string') return(path.resolve(cwd, pathName));
-		else if(pathDefault) return(path.resolve(root, pathDefault));
-		else return(null);
+		if(typeof(pathName) == 'string') {
+			return(path.resolve(cwd, pathName));
+		} else if(pathDefault) {
+			return(path.resolve(root, pathDefault));
+		} else {
+			return(null);
+		}
 	}
 
-	var configPath = resolve(opts['config'], 'autogypi.json');
-	var gypPath: string;
+	const configPath = resolve(opts['config'], 'autogypi.json');
+	let gypPath: string;
 
 	if(opts['initGyp']) gypPath = resolve(opts['initGyp'], 'binding.gyp');
 
 	if(!opts['root']) {
-		var refPath = configPath || gypPath;
+		const refPath = configPath || gypPath;
 		if(refPath) root = path.dirname(refPath);
 	}
 
-	var outputPath = resolve(opts['output'], 'auto.gypi');
-	var outputTopPath = resolve(opts['outputTop'], 'auto-top.gypi');
-	var config: AutogypiConfig;
+	let outputPath = resolve(opts['output'], 'auto.gypi');
+	let outputTopPath = resolve(opts['outputTop'], 'auto-top.gypi');
+	let config: AutogypiConfig;
 
 	try {
 		config = require(configPath);
@@ -89,11 +96,17 @@ function handleGenerate(opts: { [key: string]: any }) {
 		config = {};
 	}
 
-	if(opts['output']) config.output = path.relative(path.dirname(configPath), outputPath);
-	else outputPath = path.resolve(path.dirname(configPath), config['output'] || outputPath);
+	if(opts['output']) {
+		config.output = path.relative(path.dirname(configPath), outputPath);
+	} else {
+		outputPath = path.resolve(path.dirname(configPath), config['output'] || outputPath);
+	}
 
-	if(typeof(opts['outputTop']) == 'string') config.outputTop = path.relative(path.dirname(configPath), outputTopPath);
-	else outputTopPath = path.resolve(path.dirname(configPath), config['outputTop'] || outputTopPath);
+	if(typeof(opts['outputTop']) == 'string') {
+		config.outputTop = path.relative(path.dirname(configPath), outputTopPath);
+	} else {
+		outputTopPath = path.resolve(path.dirname(configPath), config['outputTop'] || outputTopPath);
+	}
 
 	config['dependencies'] = concatUnique(config.dependencies, opts['package']);
 	config['includes'] = concatUnique(config.includes, opts['includeDir']);
@@ -103,8 +116,9 @@ function handleGenerate(opts: { [key: string]: any }) {
 	if(opts['outputTop'] === false) outputTopPath = null;
 
 	if(opts['initGyp']) {
-		var gypPath = resolve(opts['initGyp'], 'binding.gyp');
-		var gyp = initGyp({
+		gypPath = resolve(opts['initGyp'], 'binding.gyp');
+
+		const gyp = initGyp({
 			basePath: path.dirname(gypPath),
 			outputPath: outputPath,
 			outputTopPath: outputTopPath,
@@ -114,7 +128,7 @@ function handleGenerate(opts: { [key: string]: any }) {
 		writeJson(gypPath, gyp, 'gyp template');
 	}
 
-	var generateOptions: GenerateOptions = {
+	const generateOptions: GenerateOptions = {
 		configPath: configPath,
 		outputPath: outputPath,
 		outputTopPath: outputTopPath

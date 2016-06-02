@@ -10,7 +10,7 @@
 	},
 	"files": [
 		"typings/main.d.ts",
-		"src/typings-custom.d.ts",
+		"src/resolve.d.ts",
 
 		"src/cli.ts"
 	]
