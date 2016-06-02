@@ -11,7 +11,9 @@
     "tsc": "tsc",
     "docts": "docts",
     "typings": "typings",
-    "prepublish": "tslint src/autogypi.ts src/cli.ts && typings install && tsc",
+
+    "lint": "tslint src/autogypi.ts src/cli.ts",
+    "prepublish": "npm run lint && typings install && tsc",
     "test": "node autogypi --help"
   },
   "author": "Juha Järvi",
