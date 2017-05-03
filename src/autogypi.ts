@@ -15,7 +15,7 @@ export interface BindingConfig {
 	/** Absolute path to generated auto.gypi to include in default target. */
 	outputPath: string;
 	/** Absolute path to generated auto-top.gypi to include at top level. */
-	outputTopPath: string;
+	outputTopPath: string | null;
 	/** List of absolute paths to C/C++ source files to compile. */
 	sourceList: string[];
 }
@@ -28,7 +28,7 @@ export interface GenerateOptions {
 	/** Absolute path to auto.gypi to generate. */
 	outputPath: string;
 	/** Absolute path to auto-top.gypi to generate. */
-	outputTopPath: string;
+	outputTopPath: string | null;
 }
 
 /** Format of autogypi.json files published in Node.js modules. */
@@ -88,7 +88,7 @@ function parseConfig(configPath: string, config?: AutogypiConfig): Promise<GypiP
 
 	if(!config) {
 		try {
-			config = require(configPath);
+			config = require(configPath) as AutogypiConfig;
 		} catch(err) {
 			return(Promise.reject(err));
 		}
@@ -141,21 +141,21 @@ function parseConfig(configPath: string, config?: AutogypiConfig): Promise<GypiP
 
 		for(let sub of gypiList) {
 			for(let key of Object.keys(sub.gypi || {})) {
-				gypi[key] = (gypi[key] || []).concat(sub.gypi[key]);
+				gypi[key] = (gypi[key] || []).concat(sub.gypi![key]);
 			}
 
 			for(let key of Object.keys(sub.gypiTop || {})) {
-				gypiTop[key] = (gypiTop[key] || []).concat(sub.gypiTop[key]);
+				gypiTop[key] = (gypiTop[key] || []).concat(sub.gypiTop![key]);
 			}
 		}
 
 		// Add options for this module. Make all paths absolute.
 
-		if(config.includes) {
+		if(config && config.includes) {
 			gypi.includes = (gypi.includes || []).concat(config.includes.map(resolveFile));
 		}
 
-		if(config.topIncludes) {
+		if(config && config.topIncludes) {
 			gypiTop.includes = (gypiTop.includes || []).concat(config.topIncludes.map(resolveFile));
 		}
 
@@ -196,14 +196,14 @@ export function generate(opts: GenerateOptions, config: AutogypiConfig) {
 		].join('\n');
 
 		// Serialize generated .gypi contents with relative paths to output JSON files.
-		relativize(path.dirname(opts.outputPath), result.gypi);
+		relativize(path.dirname(opts.outputPath), result.gypi!);
 
 		const writeTasks = [
 			writeJson(opts.outputPath, result.gypi, 'gypi', header)
 		];
 
 		if(opts.outputTopPath) {
-			relativize(path.dirname(opts.outputTopPath), result.gypiTop);
+			relativize(path.dirname(opts.outputTopPath), result.gypiTop!);
 			writeTasks.push(
 				writeJson(opts.outputTopPath, result.gypiTop, 'gypi', header)
 			);

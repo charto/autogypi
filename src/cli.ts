@@ -50,7 +50,7 @@ handleGenerate(cmd.opts());
 
 /** Return sorted unique values from multiple arrays. */
 
-function concatUnique(...args: string[][]) {
+function concatUnique(...args: (string[] | undefined)[]) {
 	const tbl: { [key: string]: any } = {};
 
 	for(let list of args) {
@@ -72,12 +72,12 @@ function handleGenerate(opts: { [key: string]: any }) {
 		} else if(pathDefault) {
 			return(path.resolve(root, pathDefault));
 		} else {
-			return(null);
+			return(pathDefault);
 		}
 	}
 
-	const configPath = resolve(opts['config'], 'autogypi.json');
-	let gypPath: string;
+	const configPath = resolve(opts['config'], 'autogypi.json')!;
+	let gypPath: string | null | undefined;
 
 	if(opts['initGyp']) gypPath = resolve(opts['initGyp'], 'binding.gyp');
 
@@ -87,14 +87,12 @@ function handleGenerate(opts: { [key: string]: any }) {
 	}
 
 	let outputPath = resolve(opts['output'], 'auto.gypi');
-	let outputTopPath = resolve(opts['outputTop'], 'auto-top.gypi');
-	let config: AutogypiConfig;
+	let outputTopPath: string | null = resolve(opts['outputTop'], 'auto-top.gypi');
+	let config: AutogypiConfig = {};
 
 	try {
 		config = require(configPath);
-	} catch(err) {
-		config = {};
-	}
+	} catch(err) {}
 
 	if(opts['output']) {
 		config.output = path.relative(path.dirname(configPath), outputPath);
